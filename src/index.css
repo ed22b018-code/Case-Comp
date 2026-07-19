@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Leaflet map fills its container */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #f8fafc;
+}
+
+/* Custom tooltip style */
+.mai-tooltip {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  color: #f1f5f9 !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25) !important;
+  backdrop-filter: blur(4px);
+}
+
+.mai-tooltip::before {
+  display: none !important;
+}

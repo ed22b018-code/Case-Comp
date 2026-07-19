@@ -1,0 +1,6 @@
+source_name,source_vintage,canonical_district_id,canonical_name,state,notes
+# Add manual name corrections here when fuzzy matching fails.
+# Format: source_name = how the district appears in raw data
+#         canonical_district_id = dt_code from district_crosswalk.csv
+# Example (uncomment to activate):
+# Y.S.R. Kadapa,nfhs_5,539,Y.S.R.,Andhra Pradesh,NFHS-5 uses old district name

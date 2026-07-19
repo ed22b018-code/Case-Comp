@@ -1,0 +1,14 @@
+district_id,value,year
+# district_id = dt_code from pipeline/crosswalk/district_crosswalk.csv
+# value      = the indicator value for that district-year
+"# year       = 2011 | 2016 | 2021  (pipeline uses 2011 as base, 2016+2021 for CAGR)"
+# DELETE the comment rows above before saving — they are for reference only
+168,<Hamirpur_2011>,2011
+168,<Hamirpur_2016>,2016
+168,<Hamirpur_2021>,2021
+271,<Peren_2011>,2011
+271,<Peren_2016>,2016
+271,<Peren_2021>,2021
+495,<Daman_2011>,2011
+495,<Daman_2016>,2016
+495,<Daman_2021>,2021

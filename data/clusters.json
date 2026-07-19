@@ -1,0 +1,42 @@
+{
+  "k": 4,
+  "method": "kmeans",
+  "profiles": [
+    {
+      "clusterId": 0,
+      "archetype": "Emerging Opportunity",
+      "n_districts": 193,
+      "demand": 24.0,
+      "monetization": 40.9,
+      "access": 19.7,
+      "growth": 43.7
+    },
+    {
+      "clusterId": 1,
+      "archetype": "High Access, Low Monetisation",
+      "n_districts": 341,
+      "demand": 36.8,
+      "monetization": 44.3,
+      "access": 36.5,
+      "growth": 57.3
+    },
+    {
+      "clusterId": 2,
+      "archetype": "Premium Urban",
+      "n_districts": 65,
+      "demand": 71.0,
+      "monetization": 51.7,
+      "access": 69.9,
+      "growth": 66.9
+    },
+    {
+      "clusterId": 3,
+      "archetype": "Chronic-Driven Growth",
+      "n_districts": 111,
+      "demand": 32.3,
+      "monetization": 58.4,
+      "access": 31.8,
+      "growth": 50.7
+    }
+  ]
+}

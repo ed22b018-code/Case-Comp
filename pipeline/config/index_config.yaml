@@ -1,0 +1,256 @@
+# ============================================================================
+# MAI Index Configuration — THE ONLY FILE THAT CHANGES BETWEEN MILESTONES
+# ============================================================================
+# To add a real indicator:
+#   1. Drop tidy CSV at the path in `file` (columns: district_id, value, year)
+#   2. Set status: READY
+#   3. Run: python pipeline/run_pipeline.py
+#
+# To finalise weights:
+#   Fill in the `weights` section below using PCA/entropy + business anchoring
+#   + sensitivity output from reports/output/sensitivity_summary.md.
+#   Weights must sum to 1.0 within each therapy.
+#
+# AGGREGATION NOTE (Amendment 1):
+#   scoring_function: arithmetic  →  headline = Σ(pillar_score × weight)
+#   scoring_function: geometric   →  headline = Π(pillar_score ^ weight) [HDI-2010]
+#   DEFAULT is geometric (M3 onwards) — non-compensatory, HDI-2010 precedent.
+#   Arithmetic kept available for comparison; aggregation_comparison.md reports both.
+# ============================================================================
+
+geography:
+  target_vintage: census_2011
+
+therapies: [overall, chronic, acute]
+pillars:   [demand, monetization, access, growth]
+
+# arithmetic | geometric  (see note above)
+scoring_function: geometric
+
+# ── INDICATORS ───────────────────────────────────────────────────────────────
+# therapy_relevance multipliers drive per-therapy indicator emphasis.
+# Within-pillar aggregation: weighted_mean(indicator_scores, weights=relevance/Σrelevance)
+# Defaults to 1.0 if omitted.  Use 0.0 to fully exclude for a therapy.
+#
+# Placeholder weights shown in brackets are EQUAL-WEIGHT PLACEHOLDERS.
+# Final weights come from: PCA/entropy weighting → business anchoring → sensitivity check.
+# ─────────────────────────────────────────────────────────────────────────────
+
+indicators:
+
+  # ── DEMAND PILLAR ──────────────────────────────────────────────────────────
+  # Chronic leans on population health burden (elderly + chronic disease prevalence).
+  # Acute leans on hospital capacity as the demand driver.
+
+  - id: pop_elderly_pct
+    label: "Population aged 60+ years (%)"
+    source: "Census 2011 / SRS (state-level estimates disaggregated)"
+    pillar: demand
+    direction: higher_better
+    transform: winsorize_minmax
+    file: raw/indicators/pop_elderly_pct.csv
+    status: READY          # flip to READY when real CSV is placed here
+    therapy_relevance:
+      overall: 1.0
+      chronic: 1.8        # elderly = core chronic disease cohort
+      acute:   0.5        # age matters less for acute episode incidence rate
+
+  - id: chronic_disease_prev
+    label: "Chronic disease prevalence proxy (%)"
+    source: "NFHS-5 (2019-21) — composite of hypertension + diabetes screenings"
+    pillar: demand
+    direction: higher_better
+    transform: winsorize_minmax
+    file: raw/indicators/chronic_disease_prev.csv
+    status: READY
+    therapy_relevance:
+      overall: 1.0
+      chronic: 2.2        # direct demand signal for chronic portfolio
+      acute:   0.3        # minimal overlap with acute treatment demand
+
+  - id: hosp_bed_density
+    label: "Hospital beds per 10 000 population"
+    source: "NHP / HMIS 2022"
+    pillar: demand
+    direction: higher_better
+    transform: winsorize_minmax
+    file: raw/indicators/hosp_bed_density.csv
+    status: READY
+    therapy_relevance:
+      overall: 1.0
+      chronic: 0.5        # chronic care is ambulatory, less bed-dependent
+      acute:   2.0        # acute hospitalisation relies heavily on bed capacity
+
+  # ── MONETIZATION PILLAR ────────────────────────────────────────────────────
+  # Chronic leans on insurance penetration + low OOPE (long-duration treatment financing).
+  # Acute leans on general income (single-episode willingness-to-pay).
+
+  - id: per_capita_nsdp
+    label: "Per-capita Net State Domestic Product (₹, 2011-12 prices)"
+    source: "RBI / MoSPI district-level estimates"
+    pillar: monetization
+    direction: higher_better
+    transform: winsorize_minmax
+    file: raw/indicators/per_capita_nsdp.csv
+    status: READY
+    therapy_relevance:
+      overall: 1.0
+      chronic: 1.0
+      acute:   1.2        # acute OOP spending more income-elastic
+
+  - id: health_insurance_cov
+    label: "Health insurance / Ayushman coverage (%)"
+    source: "NFHS-5 (2019-21)"
+    pillar: monetization
+    direction: higher_better
+    transform: winsorize_minmax
+    file: raw/indicators/health_insurance_cov.csv
+    status: READY
+    therapy_relevance:
+      overall: 1.0
+      chronic: 1.9        # chronic medications need sustained coverage
+      acute:   0.5        # acute episodes often not pre-empted by insurance
+
+  - id: oope_pct_hhexp
+    label: "Out-of-pocket health expenditure as % of household expenditure"
+    source: "NFHS-5 (2019-21) / NSS"
+    pillar: monetization
+    direction: inverse    # high OOPE = bad monetization environment
+    transform: winsorize_minmax
+    file: raw/indicators/oope_pct_hhexp.csv
+    status: READY
+    therapy_relevance:
+      overall: 1.0
+      chronic: 1.5        # chronic patients sustain the highest cumulative OOPE
+      acute:   0.8
+
+  # ── ACCESS PILLAR ──────────────────────────────────────────────────────────
+  # Acute leans heavily on physical reach (roads + pharmacy density).
+  # Chronic care requires periodic access; urban density matters for both.
+
+  - id: pharmacy_density
+    label: "Retail pharmacies per 100 000 population"
+    source: "Drug Controller / NHP 2022"
+    pillar: access
+    direction: higher_better
+    transform: winsorize_minmax
+    file: raw/indicators/pharmacy_density.csv
+    status: READY
+    therapy_relevance:
+      overall: 1.0
+      chronic: 0.8        # chronic patients have more lead time to access pharmacy
+      acute:   1.9        # acute episodes need immediate proximity to dispensary
+
+  - id: road_connectivity
+    label: "All-weather road connectivity index (% habitations connected)"
+    source: "PMGSY / MoRD Bhuvan"
+    pillar: access
+    direction: higher_better
+    transform: winsorize_minmax
+    file: raw/indicators/road_connectivity.csv
+    status: READY
+    therapy_relevance:
+      overall: 1.0
+      chronic: 0.6        # chronic patients plan; less time-sensitive
+      acute:   2.1        # acute care timeliness critically road-dependent
+
+  - id: urban_pop_pct
+    label: "Urban population (%)"
+    source: "Census 2011"
+    pillar: access
+    direction: higher_better
+    transform: winsorize_minmax
+    file: raw/indicators/urban_pop_pct.csv
+    status: READY
+    therapy_relevance:
+      overall: 1.0
+      chronic: 1.1
+      acute:   1.0
+
+  # ── GROWTH PILLAR ──────────────────────────────────────────────────────────
+  # Chronic leans on health infrastructure investment (supply-side enabler).
+  # Acute leans on population growth rate (expanding untreated episode pool).
+
+  - id: pop_growth_rate
+    label: "District population CAGR 2001-2011 (%)"
+    source: "Census 2001 & 2011"
+    pillar: growth
+    direction: higher_better
+    transform: winsorize_minmax
+    file: raw/indicators/pop_growth_rate.csv
+    status: READY
+    therapy_relevance:
+      overall: 1.0
+      chronic: 0.7        # chronic prevalence lags population growth
+      acute:   1.6        # acute episode volume tracks population size directly
+
+  - id: health_infra_growth
+    label: "Health infrastructure growth index (sub-centres + PHCs CAGR)"
+    source: "HMIS / Rural Health Statistics 2011-22"
+    pillar: growth
+    direction: higher_better
+    transform: winsorize_minmax
+    file: raw/indicators/health_infra_growth.csv
+    status: READY
+    therapy_relevance:
+      overall: 1.0
+      chronic: 1.6        # chronic care relies on primary / chronic care centres
+      acute:   0.8        # acute care more hospital-centric than PHC-centric
+
+  - id: literacy_rate
+    label: "Effective literacy rate (%) — health-seeking demand proxy"
+    source: "Census 2011"
+    pillar: growth
+    direction: higher_better
+    transform: winsorize_minmax
+    file: raw/indicators/literacy_rate.csv
+    status: READY
+    therapy_relevance:
+      overall: 1.0
+      chronic: 1.3        # literate patients more likely to seek chronic disease mgmt
+      acute:   0.9
+
+# ── WEIGHTS ──────────────────────────────────────────────────────────────────
+# PLACEHOLDER: equal weights across pillars for each therapy.
+# FINAL WEIGHTS to be determined via:
+#   1. PCA / entropy weighting on normalised indicators (data-driven baseline)
+#   2. Business anchoring with therapy-area experts
+#   3. Sensitivity analysis (reports/output/sensitivity_summary.md)
+#
+# Rules enforced by the engine: each therapy's weights must sum to 1.0.
+# ─────────────────────────────────────────────────────────────────────────────
+weights:
+  overall:
+    demand:       0.25
+    monetization: 0.25
+    access:       0.25
+    growth:       0.25
+
+  chronic:                  # leans monetization + growth (sustained treatment financing)
+    demand:       0.20
+    monetization: 0.35
+    access:       0.20
+    growth:       0.25
+
+  acute:                    # leans demand + access (episode volume × reach)
+    demand:       0.35
+    monetization: 0.15
+    access:       0.35
+    growth:       0.15
+
+# ── FORECASTING ──────────────────────────────────────────────────────────────
+forecasting:
+  base_year:   2011
+  target_year: 2030
+  method: gradient_boost   # cagr | gradient_boost (GBM slot: see forecasting/forecaster.py)
+
+# ── CLUSTERING ───────────────────────────────────────────────────────────────
+clustering:
+  method:   kmeans          # kmeans | gmm
+  k_range:  [3, 8]          # elbow + silhouette search range
+  random_state: 42
+
+# ── VALIDATION (gated) ───────────────────────────────────────────────────────
+validation:
+  proxy_file: raw/validation/validation_proxy.csv    # pipeline skips if this file absent
+  # TODO: source an external market proxy (e.g., IPM district pharma sales, IQVIA)
